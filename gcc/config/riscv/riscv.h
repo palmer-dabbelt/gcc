@@ -63,8 +63,6 @@ along with GCC; see the file COPYING3.  If not see
 %{mabi=*} \
 %(subtarget_asm_spec)"
 
-#define TARGET_DEFAULT_CMODEL CM_MEDLOW
-
 #define LOCAL_LABEL_PREFIX	"."
 #define USER_LABEL_PREFIX	""
 

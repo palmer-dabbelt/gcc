@@ -74,3 +74,5 @@ along with GCC; see the file COPYING3.  If not see
    "/usr/lib" XLEN_SPEC "/" ABI_SPEC "/ "	\
    "/lib/ "					\
    "/usr/lib/ "
+
+#define TARGET_DEFAULT_CMODEL CM_MEDLOW

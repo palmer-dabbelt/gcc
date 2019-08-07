@@ -32,3 +32,5 @@ along with GCC; see the file COPYING3.  If not see
 
 #undef  ENDFILE_SPEC
 #define ENDFILE_SPEC "crtend%O%s"
+
+#define TARGET_DEFAULT_CMODEL CM_DEFAULT

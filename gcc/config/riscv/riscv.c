@@ -4531,6 +4531,10 @@ riscv_option_override (void)
   /* Function to allocate machine-dependent function status.  */
   init_machine_status = &riscv_init_machine_status;
 
+  /* If the user didn't specify a code model then automatically pick one.  */
+  if (riscv_cmodel == CM_DEFAULT)
+    riscv_cmodel = UNITS_PER_WORD == 4 ? CM_MEDLOW : CM_MEDANY;
+
   if (flag_pic)
     riscv_cmodel = CM_PIC;
 
