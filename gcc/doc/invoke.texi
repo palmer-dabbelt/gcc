@@ -28947,22 +28947,19 @@ with @option{--with-isa-spec=} specifying a different default version.
 @opindex march
 @item -march=@var{feature-string}
 Generate code for given feature string.  Feature strings are similar in spirit
-to RISC-V ISA strings, but are subtly different.  
+to RISC-V ISA strings, but are subtly different.  Users that just what to
+target a specific CPU should consider using the @option{-mcpu} argument, 
 
-The supported base feature sets are:
-
-@table @code
-@item rv32i: 
-@item rv32e:
-@item rv32g: 
-@item rv64i
-@item rv64g
-@end table
+Similar to ISA strings, feature strings consist of a single base feature set
+along with zero or more extensions.  The supported base feature sets are
+@samp{rv32i}, @samp{rv64i}, @samp{rv32e}, @samp{rv32g}, and @samp{rv64g}.
+These mostly match the cooresponding base ISA for the current
+@var{ISA-spec-string} (see @option{-misa-spec}).
 
 The supported extensions are:
 
 @table @code
-@item m
+@item m: Generate code for the M extension, 
 @item a
 @item f
 @item d
