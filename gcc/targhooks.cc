@@ -801,6 +801,13 @@ hook_int_CUMULATIVE_ARGS_arg_info_0 (cumulative_args_t,
   return 0;
 }
 
+int
+hook_int_CUMULATIVE_ARGS_arg_info_1 (cumulative_args_t,
+				     const function_arg_info &)
+{
+  return 1;
+}
+
 void
 hook_void_CUMULATIVE_ARGS (cumulative_args_t)
 {

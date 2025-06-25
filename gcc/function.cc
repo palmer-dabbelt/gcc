@@ -2297,6 +2297,7 @@ struct assign_parm_data_one
   machine_mode passed_mode;
   struct locate_and_pad_arg_data locate;
   int partial;
+  int extended;
 };
 
 /* A subroutine of assign_parms.  Initialize ALL.  */
@@ -2566,18 +2567,23 @@ assign_parm_find_entry_rtl (struct assign_parm_data_all *all,
 
   if (entry_parm)
     {
-      int partial;
+      int partial, extended;
 
       partial = targetm.calls.arg_partial_bytes (all->args_so_far, data->arg);
       data->partial = partial;
 
+      extended = targetm.calls.arg_extended_on_stack (all->args_so_far, data->arg);
+      data->extended = extended;
+
       /* The caller might already have allocated stack space for the
 	 register parameters.  */
-      if (partial != 0 && all->reg_parm_stack_space == 0)
+      if (partial != 0 && all->reg_parm_stack_space == 0 && extended)
 	{
 	  /* Part of this argument is passed in registers and part
 	     is passed on the stack.  Ask the prologue code to extend
-	     the stack part so that we can recreate the full value.
+	     the stack part so that we can recreate the full value, unless for
+	     some reason the backend doesn't like that in which case we'll
+	     synthesize the argument via subword moves later.
 
 	     PRETEND_BYTES is the size of the registers we need to store.
 	     CURRENT_FUNCTION_PRETEND_ARGS_SIZE is the amount of extra
@@ -2631,8 +2637,9 @@ assign_parm_is_stack_parm (struct assign_parm_data_all *all,
   /* Trivially true if we've no incoming register.  */
   if (data->entry_parm == NULL)
     ;
-  /* Also true if we're partially in registers and partially not,
-     since we've arranged to drop the entire argument on the stack.  */
+  /* Also true if we're partially in registers and partially not, as we'll
+     either extend the argument in-place on the stack or fix it up later
+     depending on what the target wants.  */
   else if (data->partial != 0)
     ;
   /* Also true if the target says that it's passed in both registers
@@ -2749,7 +2756,7 @@ assign_parm_adjust_entry_rtl (struct assign_parm_data_one *data)
      In the special case of a DImode or DFmode that is split, we could put
      it together in a pseudoreg directly, but for now that's not worth
      bothering with.  */
-  if (data->partial != 0)
+  if (data->partial != 0 && data->extended)
     {
       /* Handle calls that pass values in multiple non-contiguous
 	 locations.  The Irix 6 ABI has examples of this.  */
@@ -3337,6 +3344,15 @@ assign_parm_setup_reg (struct assign_parm_data_all *all, tree parm,
 			unsignedp, parmreg,
 			promoted_nominal_mode, VOIDmode, false, NULL);
     }
+  else if (data->partial && !data->extended)
+    {
+      emit_move_insn (operand_subword (parmreg, 0, 1, promoted_nominal_mode),
+		      operand_subword (data->entry_parm, 0, 1,
+				       promoted_nominal_mode));
+      emit_move_insn (operand_subword (parmreg, 1, 1, promoted_nominal_mode),
+		      operand_subword (data->stack_parm, 0, 1,
+				       promoted_nominal_mode));
+    }
   else
     emit_move_insn (parmreg, validated_mem);
 
@@ -3501,8 +3517,9 @@ assign_parm_setup_stack (struct assign_parm_data_all *all, tree parm,
   if (data->entry_parm != data->stack_parm)
     {
       rtx src, dest;
+      rtx orig_stack_parm = data->stack_parm;
 
-      if (data->stack_parm == 0)
+      if (data->stack_parm == 0 || (data->partial && !data->extended))
 	{
 	  int align = STACK_SLOT_ALIGNMENT (data->arg.type,
 					    GET_MODE (data->entry_parm),
@@ -3528,6 +3545,14 @@ assign_parm_setup_stack (struct assign_parm_data_all *all, tree parm,
 
       if (TYPE_EMPTY_P (data->arg.type))
 	/* Empty types don't really need to be copied.  */;
+      else if (data->partial && !data->extended)
+	{
+	  rtx src2 = validize_mem (copy_rtx (orig_stack_parm));
+	  emit_move_insn (operand_subword (dest, 0, 1, GET_MODE (dest)),
+			  operand_subword (src, 0, 1, GET_MODE (src)));
+	  emit_move_insn (operand_subword (dest, 1, 1, GET_MODE (dest)),
+			  operand_subword (src2, 0, 1, GET_MODE (src2)));
+	}
       else if (MEM_P (src))
 	{
 	  /* Use a block move to handle potentially misaligned entry_parm.  */

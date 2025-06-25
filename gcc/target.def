@@ -5165,6 +5165,17 @@ register to be used by the caller for this argument; likewise\n\
  int, (cumulative_args_t cum, const function_arg_info &arg),
  hook_int_CUMULATIVE_ARGS_arg_info_0)
 
+DEFHOOK
+(arg_extended_on_stack,
+ "When arguments are split between the registers and the stack, it\n\
+is usually profitable to construct the argument in place on the stack\n\
+and then load it into a register.  These sequences may cause issues for\n\
+some systems, for example by generating misaligned accesses.  This target\n\
+hook determines if arguments should be construct in place on the stack, or\n\
+the whole value should be reconstructed.",
+ int, (cumulative_args_t cum, const function_arg_info &arg),
+ hook_int_CUMULATIVE_ARGS_arg_info_1)
+
 /* Update the state in CA to advance past an argument in the
    argument list.  The values MODE, TYPE, and NAMED describe that
    argument.  */

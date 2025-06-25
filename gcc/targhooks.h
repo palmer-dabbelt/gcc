@@ -144,6 +144,8 @@ extern bool hook_bool_CUMULATIVE_ARGS_arg_info_true
   (cumulative_args_t, const function_arg_info &);
 extern int hook_int_CUMULATIVE_ARGS_arg_info_0
   (cumulative_args_t, const function_arg_info &);
+extern int hook_int_CUMULATIVE_ARGS_arg_info_1
+  (cumulative_args_t, const function_arg_info &);
 extern void hook_void_CUMULATIVE_ARGS (cumulative_args_t);
 extern void hook_void_CUMULATIVE_ARGS_tree (cumulative_args_t, tree);
 extern void hook_void_CUMULATIVE_ARGS_rtx_tree (cumulative_args_t, rtx, tree);

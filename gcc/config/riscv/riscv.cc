@@ -247,6 +247,9 @@ struct riscv_arg_info {
 
   /* The offset of the first register used, provided num_mrs is nonzero.  */
   unsigned int mr_offset;
+
+  /* The offset from the (virtual) arg pointer of this argument, if it is on the stack.  */
+  unsigned int ap_offset;
 };
 
 /* One stage in a constant building sequence.  These sequences have
@@ -6335,6 +6338,7 @@ riscv_get_arg_info (struct riscv_arg_info *info, const CUMULATIVE_ARGS *cum,
   info->num_fprs = 0;
   info->num_gprs = MIN (num_words, MAX_ARGS_IN_REGISTERS - info->gpr_offset);
   info->stack_p = (num_words - info->num_gprs) != 0;
+  info->ap_offset = (num_words - info->num_gprs) * UNITS_PER_WORD;
 
   if (info->num_gprs || return_p)
     return gen_rtx_REG (mode, gpr_base + info->gpr_offset);
@@ -6403,6 +6407,30 @@ riscv_arg_partial_bytes (cumulative_args_t cum,
   riscv_get_arg_info (&arg, get_cumulative_args (cum), generic_arg.mode,
 		      generic_arg.type, generic_arg.named, false);
   return arg.stack_p ? arg.num_gprs * UNITS_PER_WORD : 0;
+}
+
+/* Implement TARGET_ARG_EXTENDED_ON_STACK.  */
+
+static int
+riscv_arg_extended_on_stack (cumulative_args_t cum,
+			     const function_arg_info &generic_arg)
+{
+  struct riscv_arg_info arg;
+  poly_int64 mode_size;
+
+  /* For machines with fast unaligned accesses we'll always be better off
+   * mangling the access in place.  */
+  if (! riscv_slow_unaligned_access_p)
+    return 1;
+
+  riscv_get_arg_info (&arg, get_cumulative_args (cum), generic_arg.mode,
+		      generic_arg.type, generic_arg.named, false);
+
+  mode_size = GET_MODE_SIZE (generic_arg.mode);
+  gcc_assert (mode_size.is_constant ());
+  /* This assumes the arg pointer is aligned to the type size.  IIRC this isn't
+   * true for the 32-bit embedded ABI, but I don't remember if we implemented that.  */
+  return (arg.ap_offset % mode_size.to_constant ()) == 0;
 }
 
 /* Implement FUNCTION_VALUE and LIBCALL_VALUE.  For normal calls,
@@ -14881,6 +14909,8 @@ synthesize_and (rtx operands[3])
 #define TARGET_PASS_BY_REFERENCE riscv_pass_by_reference
 #undef TARGET_ARG_PARTIAL_BYTES
 #define TARGET_ARG_PARTIAL_BYTES riscv_arg_partial_bytes
+#undef TARGET_ARG_EXTENDED_ON_STACK
+#define TARGET_ARG_EXTENDED_ON_STACK riscv_arg_extended_on_stack
 #undef TARGET_FUNCTION_ARG
 #define TARGET_FUNCTION_ARG riscv_function_arg
 #undef TARGET_FUNCTION_ARG_ADVANCE

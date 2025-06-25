@@ -4320,6 +4320,15 @@ register to be used by the caller for this argument; likewise
 @code{TARGET_FUNCTION_INCOMING_ARG}, for the called function.
 @end deftypefn
 
+@deftypefn {Target Hook} int TARGET_ARG_EXTENDED_ON_STACK (cumulative_args_t @var{cum}, const function_arg_info @var{&arg})
+When arguments are split between the registers and the stack, it
+is usually profitable to construct the argument in place on the stack
+and then load it into a register.  These sequences may cause issues for
+some systems, for example by generating misaligned accesses.  This target
+hook determines if arguments should be construct in place on the stack, or
+the whole value should be reconstructed.
+@end deftypefn
+
 @deftypefn {Target Hook} bool TARGET_PASS_BY_REFERENCE (cumulative_args_t @var{cum}, const function_arg_info @var{&arg})
 This target hook should return @code{true} if argument @var{arg} at the
 position indicated by @var{cum} should be passed by reference.  This
